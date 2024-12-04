@@ -1,0 +1,81 @@
+first when logged into kali do sudo su
+
+make sure systemctl services for atftpd and atftpd.socket is stopped and disabled
+systemctl status atftpd
+systemctl status atftpd.socket
+systemctl stop atftpd
+systemctl stop atftpd.socket
+systemctl disable atftpd
+systemctl disable atftpd.socket
+
+make sure nothing is using udp6 which shouldve been the atftpd systemctl
+lsof -i :69 && netstat -ano | grep :69
+
+The correct command to setup the tftp server with atftpd is
+atftpd --daemon --port 69 --bind-address 0.0.0.0 --verbose /srv/tftp
+
+verify server works within kali
+tftp [server ip] 
+get [file inside /srv/tftp]
+make sure your in a different directory for this step
+
+verify server works from windows local machine to kali
+tftp -i [server ip] get [File]
+
+test on switch 
+copy tftp: flash:
+
+Troubleshooting steps
+
+verify /srv/tftp can be read by everyone as this directory will be where the server is hosted
+
+Run
+lsof -i :69 && netstat -ano | grep :69
+and verify that its not systemd and not using udp6
+
+verify the windows firewall is not enabled for private or public
+
+make an ip table rule to allow port 69 traffic
+iptables -A INPUT -p udp --dport 69 -j ACCEPT
+iptables -L
+
+Logs
+journalctl -xe 
+
+
+While troubleshooting your command output should look like this
+
+──(root㉿KaliServer)-[/home/administrator/Documents]
+└─# lsof -i :69                                      
+COMMAND   PID   USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+atftpd  20484 nobody    0u  IPv4  66628      0t0  UDP *:tftp 
+                                                                                                                                                            
+┌──(root㉿KaliServer)-[/home/administrator/Documents]
+└─# netstat -ano | grep :69                           
+udp        0      0 0.0.0.0:69              0.0.0.0:*                           off (0.00/0/0)
+                                                                                                                                                            
+┌──(root㉿KaliServer)-[/home/administrator/Documents]
+└─# iptables -L -v -n
+Chain INPUT (policy ACCEPT 75 packets, 8726 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+   24  1070 ACCEPT     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            udp dpt:69
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+                                                                                                                                                            
+┌──(root㉿KaliServer)-[/home/administrator/Documents]
+└─# ls -lisa /srv/tftp
+total 8
+986886 4 drwxr-xr-x 2 nobody nogroup 4096 Dec  3 20:54 .
+915715 4 drwxr-xr-x 3 root   root    4096 Dec  3 20:30 ..
+990246 0 -rw-r--r-- 1 root   root       0 Dec  3 21:02 test
+                                                                                                                                                            
+┌──(root㉿KaliServer)-[/home/administrator/Documents]
+└─# ls -lisa /srv     
+total 12
+915715 4 drwxr-xr-x  3 root   root    4096 Dec  3 20:30 .
+     2 4 drwxr-xr-x 19 root   root    4096 Dec  3 20:30 ..
+986886 4 drwxr-xr-x  2 nobody nogroup 4096 Dec  3 20:54 tftp
