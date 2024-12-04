@@ -1,0 +1,102 @@
+Once you have the firmware (.bin file) on your Cisco switch, you can update the firmware (also referred to as upgrading the switch's IOS) using the following steps. The process involves copying the .bin file to the switch's flash memory, setting the switch to boot from the new firmware image, and then rebooting the switch.
+
+Step-by-Step Guide to Update the Switch Firmware
+
+1) Verify the Current Firmware Version
+  Before updating, it's a good idea to check the current firmware version running on the switch. Use the following command:
+  show version
+  This will display the current firmware (IOS) version, as well as other useful information like the device model and uptime.
+
+2) Copy the Firmware File to the Switch
+  If you haven’t already copied the .bin file to the switch’s flash memory using TFTP, do so now.
+  Example command for copying the firmware from the TFTP server to the switch:
+  copy tftp: flash:c2960x-universalk9-mz.152-7.E4.bin
+  Make sure to replace the filename with the actual filename of the firmware you are copying.
+
+3) After this step, verify the file is in the flash memory using:
+  dir flash:
+
+4) Set the Switch to Boot from the New Image
+  Once the .bin file is successfully transferred, you need to set the switch to boot from the new firmware image by changing the boot variable.
+  First, check the current boot settings:
+  show boot
+  Set the boot variable to the new firmware image by using the following command:
+  conf t
+  boot system flash:c2960x-universalk9-mz.152-7.E4.bin
+  Make sure to replace c2960x-universalk9-mz.152-7.E4.bin with the actual filename of your firmware.
+
+5) Save the Configuration
+  After setting the boot variable, save the configuration to ensure the changes are persistent:
+  write memory
+  Or:
+  copy running-config startup-config
+
+6) Reboot the Switch
+  Now that the switch is configured to boot from the new firmware, reboot the switch to apply the update:
+  reload
+  The switch will ask for confirmation. Type yes to proceed with the reboot.
+  Proceed with reload? [confirm]
+
+7) Verify the New Firmware Version
+  After the switch reboots, use the following command to verify that the new firmware is being used:
+  show version
+  You should see the new firmware version reflected in the output.
+
+
+
+Additional Considerations
+
+Ensure Enough Space: Make sure that the switch has enough available space in flash memory to store the new firmware image.
+
+Backup Configuration: It’s always a good idea to back up the switch’s configuration before performing a firmware upgrade, as you might need to restore it later. You can back up the configuration to a TFTP server or save it locally.
+copy running-config tftp:
+
+Recovery Mode: If something goes wrong and the switch fails to boot after the upgrade, you may need to use Recovery Mode to recover the firmware or restore the previous configuration.
+Steps to Enter Recovery Mode on a Cisco Switch
+1) Disconnect all network cables and power off the switch.
+2) Power on the switch. As soon as the switch begins to boot, perform the following steps quickly (you have a very short window to perform this).
+3) Break the Boot Sequence (Ctrl + Break)
+  Immediately press Ctrl + Break (or Ctrl + C on some models) on your terminal or console connection to interrupt the boot sequence and enter rommon mode (ROM Monitor mode). You should see a prompt like this:
+  switch:
+  If you are unable to interrupt the boot process, restart the switch and try again.
+4) Verify Flash Memory and Filesystem
+  In rommon mode, verify the contents of the flash memory to ensure that the firmware image is still there and is accessible:
+  dir flash:
+  This will display the list of files in the flash memory.
+5) Set the Boot Variable to the Correct Firmware Image
+  If the firmware image is present in flash but the switch is not booting from it, you can manually specify the image to boot from by setting the boot variable.
+  For example, if your firmware image is named c2960x-universalk9-mz.152-7.E4.bin, use the following command:
+  boot flash:c2960x-universalk9-mz.152-7.E4.bin
+  Make sure to replace the filename with the exact name of your firmware file.
+
+6) Reboot the Switch
+  After setting the boot variable, reboot the switch using the following command:
+  reload
+  This will reboot the switch, and it should now boot using the firmware image you specified.
+
+7) Troubleshoot and Reconfigure if Necessary
+  If the switch doesn't boot properly even after setting the boot variable, it's possible the firmware image is corrupted or the switch's configuration is incorrect.
+  You may need to copy the firmware image to the flash memory again, either through TFTP or by using a USB drive (if supported by your switch model).
+  To copy the firmware image from TFTP in rommon mode, use the following commands (replace with your correct IP addresses and filenames):
+  set IP_ADDRESS 192.168.1.10
+  set NETMASK 255.255.255.0
+  set TFTP_SERVER [server ip]
+  tftp -g -r c2960x-universalk9-mz.152-7.E4.bin $TFTP_SERVER
+  After copying the firmware image, you can then boot it using the boot command as described earlier.
+
+Common Recovery Commands in rommon Mode
+Here are a few more common commands you might need in rommon mode:
+
+Verify System Environment:
+show version
+
+Check Environment Variables:
+show boot
+
+Set the Boot Variable:
+set BOOT variable=flash:c2960x-universalk9-mz.152-7.E4.bin
+
+Save Configuration (once in normal mode):
+write memory
+
+Following these steps will ensure that your Cisco switch runs the new firmware and that the upgrade process goes smoothly.
