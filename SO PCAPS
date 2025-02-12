@@ -1,0 +1,71 @@
+Option 1: Attach USB HDD Directly to Security Onion (Best Approach)
+Steps to Achieve This:
+
+Physically Connect the USB HDD to the ESXi host.
+
+Step 1: Enable USB Passthrough in ESXi
+Open VMware vSphere Client (or ESXi Web UI).
+Go to Host → Manage → Hardware → PCI Devices.
+Find your USB controller and enable "Passthrough".
+Reboot the ESXi host.
+
+Step 2: Add the USB HDD to Security Onion VM
+Power off your Security Onion VM.
+Open ESXi Web UI.
+Go to VM Settings → Add New Device → USB Controller.
+Select the USB device (your HDD).
+Save and power on the Security Onion VM.
+
+Step 3: Mount USB HDD in Security Onion
+SSH into Security Onion:
+ssh username@securityonion_IP
+
+Check if the USB drive is detected:
+lsblk
+Your HDD should appear as something like /dev/sdb or /dev/sdc.
+
+Create a mount point:
+sudo mkdir -p /mnt/pcaps
+Mount the drive (assuming it's /dev/sdb1):
+
+sudo mount /dev/sdb1 /mnt/pcaps
+Make the mount permanent:
+
+Edit fstab:
+sudo nano /etc/fstab
+Add this line:
+/dev/sdb1 /mnt/pcaps ext4 defaults,nofail 0 2
+Save (Ctrl + X, then Y, then Enter).
+
+Step 4: Change Security Onion to Store PCAPs on USB HDD
+Move existing PCAPs:
+sudo mv /nsm/pcaps/* /mnt/pcaps/
+
+Update Security Onion configuration:
+sudo nano /etc/securityonion.conf
+
+Find the PCAP storage path and update it:
+PCAP_PATH=/mnt/pcaps
+
+Save changes and restart Security Onion services:
+sudo so-restart
+✅ Now, PCAPs will be saved directly to the USB HDD! This eliminates the need for SCP and large daily transfers.
+
+Option 2: Attach the USB HDD Directly to the ESXi Host (More Complex)
+Instead of passing the USB drive to the VM, you could:
+
+Mount the USB drive on ESXi itself.
+Create an NFS or iSCSI share on ESXi.
+Mount this network storage inside Security Onion.
+However, this is more complex and USB storage on ESXi is not officially supported, so I don’t recommend this unless absolutely necessary.
+
+Which Option is Better?
+✅ Best Option → USB Passthrough + Direct Mount in Security Onion (Option 1)
+
+Pros: Simple, no network transfer needed, PCAPs stored directly.
+Cons: Needs ESXi reboot to enable passthrough.
+🚫 Not Recommended → Mounting USB HDD on ESXi (Option 2)
+
+Cons: ESXi doesn’t officially support USB storage well.
+Final Recommendation
+If USB passthrough works, this is the best way to avoid SCP/rsync headaches. Let me know if you need help with the setup! 🚀
