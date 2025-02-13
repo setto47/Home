@@ -1,0 +1,33 @@
+show system setting ztp-mode
+disable it
+request system zerotouch cancel
+
+
+show system info | match dhcp
+debug software restart management-server
+
+operational mode
+show system info
+
+show config running | match ip-address
+
+configure
+set management interface address <IP>/24
+commit
+
+configure
+delete deviceconfig system ip-address
+set deviceconfig system ip-address <IP> netmask <SUBNET>
+commit
+
+configure
+set deviceconfig system management-interface enable yes
+commit
+
+show system state | match hardware
+show system state filter sys.hw
+
+
+show system mode
+check for panorama 
+set system mode normal
